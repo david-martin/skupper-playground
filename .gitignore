@@ -1,0 +1,8 @@
+#Ignore temporal directoryo
+tmp/
+
+# Ignore bin directory contents
+bin/*
+
+# Keep the bin directory
+!bin/.gitkeep

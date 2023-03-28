@@ -1,0 +1,9 @@
+apiVersion: skupper.io/v1alpha1
+kind: SkupperClusterPolicy
+metadata:
+  name: cluster-policy
+spec:
+  namespaces:
+    - "*"
+  allowIncomingLinks: true
+  allowedOutgoingLinksHostnames: ["172\\.18\\..*$"]
