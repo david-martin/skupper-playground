@@ -109,7 +109,7 @@ done;
 export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-1.kubeconfig
 kubectl create namespace west
 kubectl config set-context --current --namespace west
-skupper init
+skupper init --enable-console --enable-flow-collector
 kubectl apply -f ${EXAMPLES_DIR}/skupperclusterpolicy_1.yaml
 skupper status
 

@@ -46,3 +46,18 @@ It should succeed this time.
 export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-1.kubeconfig
 curl http://$(kubectl get svc frontend -o jsonpath="{.status.loadBalancer.ingress[0].ip}"):8080/api/health
 ```
+
+The skupper console is deployed to the west site.
+The url is logged out when you run the below:
+
+```bash
+export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-1.kubeconfig
+skupper status
+```
+
+The password for the `admin` user can be retrieved from a secret:
+
+```bash
+export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-1.kubeconfig
+kubectl get secret skupper-console-users -o jsonpath="{.data.admin}" | base64 --decode
+```
