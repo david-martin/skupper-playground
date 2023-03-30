@@ -120,15 +120,12 @@ skupper init
 kubectl apply -f ${EXAMPLES_DIR}/skupperclusterpolicy_1.yaml
 skupper status
 
-# Link Sites and deploy frontend & backend
+# Link Sites
 export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-1.kubeconfig
 skupper token create ~/west.token
-kubectl create deployment frontend --image quay.io/skupper/hello-world-frontend
-kubectl expose deployment/frontend --port 8080 --type LoadBalancer
 
 export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-2.kubeconfig
 skupper link create ~/west.token
-kubectl create deployment backend --image quay.io/skupper/hello-world-backend --replicas 3
 
 # Output status
 export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-1.kubeconfig
