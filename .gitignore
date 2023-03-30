@@ -6,3 +6,6 @@ bin/*
 
 # Keep the bin directory
 !bin/.gitkeep
+
+/app1.yaml
+/app2.yaml

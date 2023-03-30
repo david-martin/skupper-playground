@@ -9,5 +9,7 @@ spec:
   allowedOutgoingLinksHostnames: ["172\\.18\\..*$"]
   allowedExposedResources:
     - "deployment/backend"
+    - "deployment/echo"
   allowedServices:
     - "backend"
+    - "echo"

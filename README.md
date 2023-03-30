@@ -13,29 +13,29 @@ make local-setup
 ```
 
 The skupper console is deployed to the west site.
-The url is logged out when you run the below:
+The url is output when you run the below:
 
 ```bash
-export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-1.kubeconfig
+kubectl config use-context kind-skupper-cluster-1
 skupper status
 ```
 
 The password for the `admin` user can be retrieved from a secret:
 
 ```bash
-export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-1.kubeconfig
+kubectl config use-context kind-skupper-cluster-1
 kubectl get secret skupper-console-users -o jsonpath="{.data.admin}" | base64 --decode
 ```
 
-## SkupperClusterPolicy example
+## Example 1: SkupperClusterPolicy
 
 Deploy the frontend and backend apps
 
 ```bash
-export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-1.kubeconfig
+kubectl config use-context kind-skupper-cluster-1
 kubectl create deployment frontend --image quay.io/skupper/hello-world-frontend
 kubectl expose deployment/frontend --port 8080 --type LoadBalancer
-export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-2.kubeconfig
+kubectl config use-context kind-skupper-cluster-2
 kubectl create deployment backend --image quay.io/skupper/hello-world-backend --replicas 3
 ```
 
@@ -44,7 +44,7 @@ It should fail as the frontend cannot reach the backend service.
 The error text should include something like `Name or service not known`
 
 ```bash
-export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-1.kubeconfig
+kubectl config use-context kind-skupper-cluster-1
 curl -X POST --data '{"name":"Test","text":"Hello"}' http://$(kubectl get svc frontend -o jsonpath="{.status.loadBalancer.ingress[0].ip}"):8080/api/hello
 ```
 
@@ -53,7 +53,7 @@ It should fail because of the SkupperClusterPolicy.
 The error text should look like `Error: Policy validation error: deployment/backend cannot be exposed`
 
 ```bash
-export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-2.kubeconfig
+kubectl config use-context kind-skupper-cluster-2
 skupper expose deployment/backend --port 8080
 ```
 
@@ -61,9 +61,9 @@ Update the SkupperClusterPolicy and attempt to expose the backend service again.
 It should succeed this time.
 
 ```bash
-export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-1.kubeconfig
+kubectl config use-context kind-skupper-cluster-1
 kubectl apply -f ./config/examples/skupperclusterpolicy_2.yaml
-export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-2.kubeconfig
+kubectl config use-context kind-skupper-cluster-2
 kubectl apply -f ./config/examples/skupperclusterpolicy_2.yaml
 skupper expose deployment/backend --port 8080
 ```
@@ -72,6 +72,55 @@ Attempt to curl the health endpoint of the frontend app again.
 It should succeed this time.
 
 ```bash
-export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-1.kubeconfig
+kubectl config use-context kind-skupper-cluster-1
 curl http://$(kubectl get svc frontend -o jsonpath="{.status.loadBalancer.ingress[0].ip}"):8080/api/health
+```
+
+## Example 2: Ingress traffic migration
+
+Deploy an app with an ingress to both clusters.
+
+```bash
+kubectl config use-context kind-skupper-cluster-1
+export APP_HOST=172.18.0.2.nip.io
+export APP_HOST_1=$APP_HOST
+envsubst < config/examples/app_with_ingress.yaml > app1.yaml
+kubectl apply -f ./app1.yaml
+
+kubectl config use-context kind-skupper-cluster-2
+export APP_HOST=172.18.0.3.nip.io
+export APP_HOST_2=$APP_HOST
+envsubst < config/examples/app_with_ingress.yaml > app2.yaml
+kubectl apply -f ./app2.yaml
+```
+
+Verify ingress connectivity to either cluster
+
+```bash
+curl $APP_HOST_1
+curl $APP_HOST_2
+```
+
+Expose the app service from each site
+
+```bash
+kubectl config use-context kind-skupper-cluster-1
+skupper expose deployment/echo --port 8080
+kubectl config use-context kind-skupper-cluster-2
+skupper expose deployment/echo --port 8080
+```
+
+Scale down the app pod on the east cluster.
+
+```bash
+kubectl config use-context kind-skupper-cluster-2
+kubectl scale --replicas=0 deployment/echo
+```
+
+Verify ingress connectivity to either cluster.
+The service in the east cluster is routing to the service in the west cluster.
+
+```bash
+curl $APP_HOST_1
+curl $APP_HOST_2
 ```

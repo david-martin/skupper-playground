@@ -2,7 +2,7 @@
 
 # shellcheck shell=bash
 
-set -xe
+set -xe pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOCAL_SETUP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -11,9 +11,11 @@ KIND_CLUSTER_PREFIX="skupper-cluster-"
 
 KIND="${BIN_DIR}/kind"
 KUSTOMIZE="${BIN_DIR}/kustomize"
+HELM="${BIN_DIR}/helm"
 
 METALLB_KUSTOMIZATION_DIR=${LOCAL_SETUP_DIR}/config/metallb
 SKUPPER_RESOURCES_DIR=${LOCAL_SETUP_DIR}/config/skupper
+INGRESS_NGINX_KUSTOMIZATION_DIR=${LOCAL_SETUP_DIR}/config/ingress-nginx
 EXAMPLES_DIR=${LOCAL_SETUP_DIR}/config/examples
 
 kindCreateCluster() {
@@ -93,6 +95,15 @@ createSkupperClusterPolicyCRDs() {
   kubectl apply -f ${SKUPPER_RESOURCES_DIR}/skupper_cluster_policy_crd.yaml
 }
 
+deployIngressController () {
+  clusterName=${1}
+  kubectl config use-context kind-${clusterName}
+  echo "Deploying Ingress controller to ${clusterName}"
+  ${KUSTOMIZE} build ${INGRESS_NGINX_KUSTOMIZATION_DIR} --enable-helm --helm-command ${HELM} | kubectl apply -f -
+  echo "Waiting for deployments to be ready ..."
+  kubectl -n ingress-nginx wait --timeout=300s --for=condition=Available deployments --all
+}
+
 port80=9090
 port443=8445
 metalLBSubnetStart=200
@@ -103,33 +114,32 @@ for ((i = 1; i <= 2; i++)); do
   kindCreateCluster ${KIND_CLUSTER_PREFIX}${i} $((${port80} + ${i} - 1)) $((${port443} + ${i} - 1))
   createSkupperClusterPolicyCRDs ${KIND_CLUSTER_PREFIX}${i}
   deployMetalLB ${KIND_CLUSTER_PREFIX}${i} $((${metalLBSubnetStart} + ${i} - 1))
+  deployIngressController ${KIND_CLUSTER_PREFIX}${i}
 done;
 
 # Initialise Skupper
-export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-1.kubeconfig
+kubectl config use-context kind-skupper-cluster-1
 kubectl create namespace west
 kubectl config set-context --current --namespace west
 skupper init --enable-console --enable-flow-collector
 kubectl apply -f ${EXAMPLES_DIR}/skupperclusterpolicy_1.yaml
-skupper status
 
-export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-2.kubeconfig
+kubectl config use-context kind-skupper-cluster-2
 kubectl create namespace east
 kubectl config set-context --current --namespace east
 skupper init
 kubectl apply -f ${EXAMPLES_DIR}/skupperclusterpolicy_1.yaml
-skupper status
 
 # Link Sites
-export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-1.kubeconfig
+kubectl config use-context kind-skupper-cluster-1
 skupper token create ~/west.token
 
-export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-2.kubeconfig
+kubectl config use-context kind-skupper-cluster-2
 skupper link create ~/west.token
 
 # Output status
-export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-1.kubeconfig
+kubectl config use-context kind-skupper-cluster-1
 skupper status
 
-export KUBECONFIG=./tmp/kubeconfigs/skupper-cluster-2.kubeconfig
+kubectl config use-context kind-skupper-cluster-2
 skupper status
