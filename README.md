@@ -101,6 +101,15 @@ curl $APP_HOST_1
 curl $APP_HOST_2
 ```
 
+Update the SkupperClusterPolicy to allow exposing services.
+
+```bash
+kubectl config use-context kind-skupper-cluster-1
+kubectl apply -f ./config/examples/skupperclusterpolicy_2.yaml
+kubectl config use-context kind-skupper-cluster-2
+kubectl apply -f ./config/examples/skupperclusterpolicy_2.yaml
+```
+
 Expose the app service from each site
 
 ```bash
