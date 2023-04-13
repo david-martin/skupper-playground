@@ -29,7 +29,10 @@ kubectl get secret skupper-console-users -o jsonpath="{.data.admin}" | base64 --
 
 ## Example 1: SkupperClusterPolicy
 
+[![Demo Video](http://img.youtube.com/vi/fN3aDwOJ9wA/0.jpg)](http://www.youtube.com/watch?v=fN3aDwOJ9wA)
+
 <img src="example_1.png" alt="example_1" width="600"/>
+
 
 Deploy the frontend and backend apps
 
