@@ -84,6 +84,9 @@ curl http://$(kubectl get svc frontend -o jsonpath="{.status.loadBalancer.ingres
 
 ## Example 2: Ingress traffic migration using Skupper as a proxy
 
+Demo Video
+[![Demo Video](http://img.youtube.com/vi/WctHkSlgqgs/0.jpg)](http://www.youtube.com/watch?v=WctHkSlgqgs)
+
 <img src="example_2.png" alt="example_2" width="600"/>
 
 Deploy an app with an ingress to both clusters.
