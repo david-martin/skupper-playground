@@ -17,12 +17,14 @@ KIND ?= $(LOCALBIN)/kind
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 HELM ?= $(LOCALBIN)/helm
 CLUSTERADM ?= $(LOCALBIN)/clusteradm
+ISTIOCTL ?= $(LOCALBIN)/istioctl
 
 ## Tool Versions
 KIND_VERSION ?= v0.17.0
 KUSTOMIZE_VERSION ?= v4.5.4
 HELM_VERSION ?= v3.10.0
 CLUSTERADM_VERSION ?= v0.4.1
+ISTIOVERSION ?= 1.17.0
 
 .PHONY: kind
 kind: $(KIND) ## Download kind locally if necessary.
@@ -53,6 +55,14 @@ $(CLUSTERADM): $(LOCALBIN)
 	test -s $(LOCALBIN)/clusteradm || \
 		{ curl -SsL $(CLUSTERADM_DOWNLOAD_URL) -o $(CLUSTERADM_TAR) && tar -C $(LOCALBIN) -xvf $(CLUSTERADM_TAR) --exclude=LICENSE && chmod +x $(CLUSTERADM); }
 
+.PHONY: istioctl
+istioctl: $(ISTIOCTL)
+$(ISTIOCTL):
+	$(eval ISTIO_TMP := $(shell mktemp -d))
+	cd $(ISTIO_TMP); curl -sSL https://istio.io/downloadIstio | ISTIO_VERSION=$(ISTIOVERSION) sh -
+	cp $(ISTIO_TMP)/istio-$(ISTIOVERSION)/bin/istioctl ${ISTIOCTL}
+	-rm -rf $(TMP)
+
 .PHONY: local-setup
-local-setup: kind kustomize helm clusteradm
+local-setup: kind kustomize helm clusteradm istioctl
 	./local-setup.sh

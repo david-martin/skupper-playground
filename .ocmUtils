@@ -17,5 +17,4 @@ ocmAddCluster() {
     ${CLUSTERADM_BIN} join --hub-token ${OCM_BOOTSTRAP_TOKEN} --hub-apiserver ${HUB_API_SERVER} \
         --cluster-name ${managedCluster} --force-internal-endpoint-lookup --context kind-${managedCluster} --wait
     ${CLUSTERADM_BIN} accept --clusters ${managedCluster} --context kind-${hubCluster} --wait
-
 }

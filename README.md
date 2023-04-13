@@ -76,7 +76,7 @@ kubectl config use-context kind-skupper-cluster-1
 curl http://$(kubectl get svc frontend -o jsonpath="{.status.loadBalancer.ingress[0].ip}"):8080/api/health
 ```
 
-## Example 2: Ingress traffic migration
+## Example 2: Ingress traffic migration using Skupper as a proxy
 
 Deploy an app with an ingress to both clusters.
 
@@ -127,6 +127,71 @@ kubectl scale --replicas=0 deployment/echo
 ```
 
 Verify ingress connectivity to either cluster.
+The service in the east cluster is routing to the service in the west cluster.
+
+```bash
+curl $APP_HOST_1
+curl $APP_HOST_2
+```
+
+## Example 3: Gateway & HttpRoute traffic migration using Skupper as a proxy & OCM for placement
+
+Deploy a Gateway to both clusters, using OCM
+
+```bash
+kubectl config use-context kind-skupper-cluster-1
+export APP_HOST=172.18.200.2.nip.io
+export APP_HOST_1=$APP_HOST
+export CLUSTER_NAMESPACE=skupper-cluster-1
+export APP_NAMESPACE=west
+envsubst < config/examples/manifestwork_gateway.yaml > gateway1.yaml
+kubectl apply -f ./gateway1.yaml
+```
+
+Deploy an app with a HttpRoute to both clusters, using OCM
+
+```bash
+kubectl config use-context kind-skupper-cluster-1
+export APP_HOST=$APP_HOST_1
+export CLUSTER_NAMESPACE=skupper-cluster-1
+export APP_NAMESPACE=west
+envsubst < config/examples/manifestwork_app_with_httproute.yaml > app_with_httproute1.yaml
+kubectl apply -f ./app_with_httproute1.yaml
+```
+
+Verify HttpRoute connectivity to either cluster
+
+```bash
+curl $APP_HOST_1
+curl $APP_HOST_2
+```
+
+Update the SkupperClusterPolicy to allow exposing services.
+
+```bash
+kubectl config use-context kind-skupper-cluster-1
+kubectl apply -f ./config/examples/skupperclusterpolicy_2.yaml
+kubectl config use-context kind-skupper-cluster-2
+kubectl apply -f ./config/examples/skupperclusterpolicy_2.yaml
+```
+
+Expose the app service from each site
+
+```bash
+kubectl config use-context kind-skupper-cluster-1
+skupper expose deployment/echo --port 8080
+kubectl config use-context kind-skupper-cluster-2
+skupper expose deployment/echo --port 8080
+```
+
+Scale down the app pod on the east cluster.
+
+```bash
+kubectl config use-context kind-skupper-cluster-2
+kubectl scale --replicas=0 deployment/echo
+```
+
+Verify HttpRoute connectivity to either cluster.
 The service in the east cluster is routing to the service in the west cluster.
 
 ```bash

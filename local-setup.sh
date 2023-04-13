@@ -9,6 +9,7 @@ LOCAL_SETUP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BIN_DIR="${SCRIPT_DIR}/bin"
 KIND_CLUSTER_PREFIX="skupper-cluster-"
 export CLUSTERADM_BIN="${BIN_DIR}/clusteradm"
+export ISTIOCTL_BIN="${BIN_DIR}/istioctl"
 
 source "${LOCAL_SETUP_DIR}"/.ocmUtils
 
@@ -20,6 +21,9 @@ METALLB_KUSTOMIZATION_DIR=${LOCAL_SETUP_DIR}/config/metallb
 SKUPPER_RESOURCES_DIR=${LOCAL_SETUP_DIR}/config/skupper
 INGRESS_NGINX_KUSTOMIZATION_DIR=${LOCAL_SETUP_DIR}/config/ingress-nginx
 EXAMPLES_DIR=${LOCAL_SETUP_DIR}/config/examples
+ISTIO_KUSTOMIZATION_DIR=${LOCAL_SETUP_DIR}/config/istio/istio-operator.yaml
+GATEWAY_API_KUSTOMIZATION_DIR=${LOCAL_SETUP_DIR}/config/gateway-api
+OCM_KUSTOMIZATION_DIR=${LOCAL_SETUP_DIR}/config/ocm
 
 kindCreateCluster() {
   local cluster=$1;
@@ -107,6 +111,31 @@ deployIngressController() {
   kubectl -n ingress-nginx wait --timeout=300s --for=condition=Available deployments --all
 }
 
+deployIstio() {
+  clusterName=${1}
+  echo "Deploying Istio to (${clusterName})"
+
+  kubectl config use-context kind-${clusterName}
+  ${ISTIOCTL_BIN} operator init
+	kubectl apply -f  ${ISTIO_KUSTOMIZATION_DIR}
+}
+
+installGatewayAPI() {
+  clusterName=${1}
+  kubectl config use-context kind-${clusterName}
+  echo "Installing Gateway API in ${clusterName}"
+
+  ${KUSTOMIZE} build ${GATEWAY_API_KUSTOMIZATION_DIR} | kubectl apply -f -
+}
+
+addOcmWorkRole() {
+  clusterName=${1}
+  kubectl config use-context kind-${clusterName}
+  echo "Applying OCM work ClusterRole & ClusterRoleBinding for Gateway resources in ${clusterName}"
+
+  ${KUSTOMIZE} build ${OCM_KUSTOMIZATION_DIR} | kubectl apply -f -
+}
+
 port80=9090
 port443=8445
 metalLBSubnetStart=200
@@ -115,6 +144,8 @@ cleanClusters
 
 for ((i = 1; i <= 2; i++)); do
   kindCreateCluster ${KIND_CLUSTER_PREFIX}${i} $((${port80} + ${i} - 1)) $((${port443} + ${i} - 1))
+  deployIstio ${KIND_CLUSTER_PREFIX}${i}
+  installGatewayAPI ${KIND_CLUSTER_PREFIX}${i}
   createSkupperClusterPolicyCRDs ${KIND_CLUSTER_PREFIX}${i}
   deployMetalLB ${KIND_CLUSTER_PREFIX}${i} $((${metalLBSubnetStart} + ${i} - 1))
   deployIngressController ${KIND_CLUSTER_PREFIX}${i}
@@ -126,6 +157,7 @@ for ((i = 1; i <= 2; i++)); do
   fi
   # Register all clusters, even the hub cluster, with the OCM Hub
   ocmAddCluster ${KIND_CLUSTER_PREFIX}1 ${KIND_CLUSTER_PREFIX}${i}
+  addOcmWorkRole
 done;
 
 # Initialise Skupper
