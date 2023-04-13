@@ -14,7 +14,7 @@ spec:
       spec:
         ports:
           - name: http-port
-            port: 80
+            port: 8080
             targetPort: http-port
             protocol: TCP
         selector:
@@ -59,7 +59,7 @@ spec:
           - group: ""
             kind: Service
             name: echo
-            port: 80
+            port: 8080
             weight: 1
           matches:
           - method: GET
