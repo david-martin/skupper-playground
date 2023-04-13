@@ -8,15 +8,21 @@ LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 
+# detect OS and ARCH
+OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
+ARCH := $(shell uname -m | sed 's/x86_64/amd64/')
+
 ## Tool Binaries
 KIND ?= $(LOCALBIN)/kind
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 HELM ?= $(LOCALBIN)/helm
+CLUSTERADM ?= $(LOCALBIN)/clusteradm
 
 ## Tool Versions
 KIND_VERSION ?= v0.17.0
 KUSTOMIZE_VERSION ?= v4.5.4
 HELM_VERSION ?= v3.10.0
+CLUSTERADM_VERSION ?= v0.4.1
 
 .PHONY: kind
 kind: $(KIND) ## Download kind locally if necessary.
@@ -39,6 +45,14 @@ $(KUSTOMIZE): $(LOCALBIN)
 	fi
 	test -s $(LOCALBIN)/kustomize || { curl -Ss $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN); }
 
+CLUSTERADM_DOWNLOAD_URL ?= https://github.com/open-cluster-management-io/clusteradm/releases/download/$(CLUSTERADM_VERSION)/clusteradm_$(OS)_$(ARCH).tar.gz
+CLUSTERADM_TAR ?= /tmp/clusteradm.tar.gz
+.PHONY: clusteradm
+clusteradm: $(CLUSTERADM)
+$(CLUSTERADM): $(LOCALBIN)
+	test -s $(LOCALBIN)/clusteradm || \
+		{ curl -SsL $(CLUSTERADM_DOWNLOAD_URL) -o $(CLUSTERADM_TAR) && tar -C $(LOCALBIN) -xvf $(CLUSTERADM_TAR) --exclude=LICENSE && chmod +x $(CLUSTERADM); }
+
 .PHONY: local-setup
-local-setup: kind kustomize helm
+local-setup: kind kustomize helm clusteradm
 	./local-setup.sh

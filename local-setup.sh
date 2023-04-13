@@ -8,6 +8,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOCAL_SETUP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BIN_DIR="${SCRIPT_DIR}/bin"
 KIND_CLUSTER_PREFIX="skupper-cluster-"
+export CLUSTERADM_BIN="${BIN_DIR}/clusteradm"
+
+source "${LOCAL_SETUP_DIR}"/.ocmUtils
 
 KIND="${BIN_DIR}/kind"
 KUSTOMIZE="${BIN_DIR}/kustomize"
@@ -95,7 +98,7 @@ createSkupperClusterPolicyCRDs() {
   kubectl apply -f ${SKUPPER_RESOURCES_DIR}/skupper_cluster_policy_crd.yaml
 }
 
-deployIngressController () {
+deployIngressController() {
   clusterName=${1}
   kubectl config use-context kind-${clusterName}
   echo "Deploying Ingress controller to ${clusterName}"
@@ -115,6 +118,14 @@ for ((i = 1; i <= 2; i++)); do
   createSkupperClusterPolicyCRDs ${KIND_CLUSTER_PREFIX}${i}
   deployMetalLB ${KIND_CLUSTER_PREFIX}${i} $((${metalLBSubnetStart} + ${i} - 1))
   deployIngressController ${KIND_CLUSTER_PREFIX}${i}
+
+  # OCM Hub goes on first cluster
+  if [[ "$i" -eq 1 ]]
+  then
+    ocmInitHub ${KIND_CLUSTER_PREFIX}${i}
+  fi
+  # Register all clusters, even the hub cluster, with the OCM Hub
+  ocmAddCluster ${KIND_CLUSTER_PREFIX}1 ${KIND_CLUSTER_PREFIX}${i}
 done;
 
 # Initialise Skupper
@@ -123,12 +134,14 @@ kubectl create namespace west
 kubectl config set-context --current --namespace west
 skupper init --enable-console --enable-flow-collector
 kubectl apply -f ${EXAMPLES_DIR}/skupperclusterpolicy_1.yaml
+skupper status
 
 kubectl config use-context kind-skupper-cluster-2
 kubectl create namespace east
 kubectl config set-context --current --namespace east
 skupper init
 kubectl apply -f ${EXAMPLES_DIR}/skupperclusterpolicy_1.yaml
+skupper status
 
 # Link Sites
 kubectl config use-context kind-skupper-cluster-1
