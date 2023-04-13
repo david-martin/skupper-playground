@@ -157,7 +157,7 @@ for ((i = 1; i <= 2; i++)); do
   fi
   # Register all clusters, even the hub cluster, with the OCM Hub
   ocmAddCluster ${KIND_CLUSTER_PREFIX}1 ${KIND_CLUSTER_PREFIX}${i}
-  addOcmWorkRole
+  addOcmWorkRole ${KIND_CLUSTER_PREFIX}${i}
 done;
 
 # Initialise Skupper

@@ -139,6 +139,7 @@ curl $APP_HOST_2
 Deploy a Gateway to both clusters, using OCM
 
 ```bash
+# Deploy both ManifestWorks to the Hub cluster
 kubectl config use-context kind-skupper-cluster-1
 export APP_HOST=172.18.200.2.nip.io
 export APP_HOST_1=$APP_HOST
@@ -146,17 +147,31 @@ export CLUSTER_NAMESPACE=skupper-cluster-1
 export APP_NAMESPACE=west
 envsubst < config/examples/manifestwork_gateway.yaml > gateway1.yaml
 kubectl apply -f ./gateway1.yaml
+
+export APP_HOST=172.18.201.2.nip.io
+export APP_HOST_2=$APP_HOST
+export CLUSTER_NAMESPACE=skupper-cluster-2
+export APP_NAMESPACE=east
+envsubst < config/examples/manifestwork_gateway.yaml > gateway2.yaml
+kubectl apply -f ./gateway2.yaml
 ```
 
 Deploy an app with a HttpRoute to both clusters, using OCM
 
 ```bash
+# Deploy both ManifestWorks to the Hub cluster
 kubectl config use-context kind-skupper-cluster-1
 export APP_HOST=$APP_HOST_1
 export CLUSTER_NAMESPACE=skupper-cluster-1
 export APP_NAMESPACE=west
 envsubst < config/examples/manifestwork_app_with_httproute.yaml > app_with_httproute1.yaml
 kubectl apply -f ./app_with_httproute1.yaml
+
+export APP_HOST=$APP_HOST_2
+export CLUSTER_NAMESPACE=skupper-cluster-2
+export APP_NAMESPACE=east
+envsubst < config/examples/manifestwork_app_with_httproute.yaml > app_with_httproute2.yaml
+kubectl apply -f ./app_with_httproute2.yaml
 ```
 
 Verify HttpRoute connectivity to either cluster
