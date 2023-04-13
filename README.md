@@ -29,6 +29,7 @@ kubectl get secret skupper-console-users -o jsonpath="{.data.admin}" | base64 --
 
 ## Example 1: SkupperClusterPolicy
 
+Demo Video
 [![Demo Video](http://img.youtube.com/vi/fN3aDwOJ9wA/0.jpg)](http://www.youtube.com/watch?v=fN3aDwOJ9wA)
 
 <img src="example_1.png" alt="example_1" width="600"/>
@@ -82,6 +83,8 @@ curl http://$(kubectl get svc frontend -o jsonpath="{.status.loadBalancer.ingres
 ```
 
 ## Example 2: Ingress traffic migration using Skupper as a proxy
+
+<img src="example_2.png" alt="example_2" width="600"/>
 
 Deploy an app with an ingress to both clusters.
 
