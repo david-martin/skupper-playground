@@ -220,11 +220,11 @@ kubectl config use-context kind-skupper-cluster-2
 skupper expose deployment/echo --port 8080
 ```
 
-Scale down the app pod on the east cluster.
+Scale down the app pod on the east cluster by setting the number of replicas in the ManifestWork to 0.
 
 ```bash
-kubectl config use-context kind-skupper-cluster-2
-kubectl scale --replicas=0 deployment/echo
+kubectl config use-context kind-skupper-cluster-1
+kubectl edit manifestwork app-manifest -n skupper-cluster-2
 ```
 
 Verify HttpRoute connectivity to either cluster.
