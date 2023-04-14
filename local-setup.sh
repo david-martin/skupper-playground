@@ -23,7 +23,6 @@ INGRESS_NGINX_KUSTOMIZATION_DIR=${LOCAL_SETUP_DIR}/config/ingress-nginx
 EXAMPLES_DIR=${LOCAL_SETUP_DIR}/config/examples
 ISTIO_KUSTOMIZATION_DIR=${LOCAL_SETUP_DIR}/config/istio/istio-operator.yaml
 GATEWAY_API_KUSTOMIZATION_DIR=${LOCAL_SETUP_DIR}/config/gateway-api
-OCM_KUSTOMIZATION_DIR=${LOCAL_SETUP_DIR}/config/ocm
 
 kindCreateCluster() {
   local cluster=$1;
@@ -128,14 +127,6 @@ installGatewayAPI() {
   ${KUSTOMIZE} build ${GATEWAY_API_KUSTOMIZATION_DIR} | kubectl apply -f -
 }
 
-addOcmWorkRole() {
-  clusterName=${1}
-  kubectl config use-context kind-${clusterName}
-  echo "Applying OCM work ClusterRole & ClusterRoleBinding for Gateway resources in ${clusterName}"
-
-  ${KUSTOMIZE} build ${OCM_KUSTOMIZATION_DIR} | kubectl apply -f -
-}
-
 port80=9090
 port443=8445
 metalLBSubnetStart=200
@@ -157,7 +148,6 @@ for ((i = 1; i <= 2; i++)); do
   fi
   # Register all clusters, even the hub cluster, with the OCM Hub
   ocmAddCluster ${KIND_CLUSTER_PREFIX}1 ${KIND_CLUSTER_PREFIX}${i}
-  addOcmWorkRole ${KIND_CLUSTER_PREFIX}${i}
 done;
 
 # Initialise Skupper
