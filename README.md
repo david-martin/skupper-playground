@@ -153,6 +153,10 @@ curl $APP_HOST_2
 
 ## Example 3: Gateway & HttpRoute traffic migration using Skupper as a proxy & OCM for placement
 
+*Demo Video*
+
+[![Demo Video](http://img.youtube.com/vi/hYfvUfsScPk/0.jpg)](http://www.youtube.com/watch?v=hYfvUfsScPk)
+
 *Architecture*
 
 <img src="example_3.png" alt="example_3" width="500"/>
