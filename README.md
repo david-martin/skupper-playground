@@ -240,6 +240,10 @@ curl $APP_HOST_2
 
 ## Example 4: Managing SkupperClusterPolicies via a MultiClusterServicePolicy and the OCM Policy Framework
 
+*Demo*
+
+[![Demo Video](http://img.youtube.com/vi/KmYpM9FYy5c/0.jpg)](http://www.youtube.com/watch?v=KmYpM9FYy5c)
+
 *Architecture*
 
 <img src="example_4.png" alt="example_4" width="500"/>
