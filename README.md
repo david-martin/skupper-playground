@@ -242,7 +242,7 @@ curl $APP_HOST_2
 
 *Architecture*
 
-TODO
+<img src="example_4.png" alt="example_4" width="500"/>
 
 Deploy the frontend and backend apps
 
@@ -279,15 +279,25 @@ kubectl config use-context kind-skupper-cluster-1
 ./bin/kustomize build config/multicluster-service-policy-controller/ | kubectl apply -f -
 ```
 
-Create a ManagedClusterSetBinding & MultiClusterServicePolicy.
+Create a ManagedClusterSetBinding, MultiClusterServicePolicy and Placement.
 This will push a SkupperClusterPolicy into both clusters via the OCM Policy AddOn.
-Then attempt to expose the backend service again.
-It should succeed this time.
 
 ```bash
 kubectl config use-context kind-skupper-cluster-1
 kubectl apply -f ./config/examples/managedclustersetbinding.yaml
+kubectl apply -f ./config/examples/placement.yaml
 kubectl apply -f ./config/examples/multiclusterservicepolicy.yaml
+```
+
+Verify the Policy is compliant i.e. a SkupperClusterPolicy has been pushed down to both clusters.
+
+```bash
+kubectl get policy multiclusterservicepolicy-sample -n default -o yaml
+```
+
+Expose the service
+
+```bash
 kubectl config use-context kind-skupper-cluster-2
 skupper expose deployment/backend --port 8080
 ```
